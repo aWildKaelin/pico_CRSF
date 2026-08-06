@@ -11,6 +11,12 @@ Currently, the library is capable of parsing incoming packets, including RC Chan
 
 The library cannot transmit packets back or parse other telemetry.
 
+# WARNING
+
+The RP2040 is a **3.3 V** microcontroller. Applying **5 V UART logic levels** to its GPIO pins **can permanently damage the microcontroller**.
+
+Before connecting a receiver, verify that its UART TX output uses 3.3 V logic. If it outputs 5 V logic, use an appropriate logic level converter.
+
 ## Usage
 
 Create a `crsf_parser` struct.
@@ -48,6 +54,19 @@ The parser structure always contains the most recently decoded values for each s
 parser.RCChannels.channel_NUM //where NUM is the channel number ranging 1 -> 16
 parser.statistics.VAL         // where VAL is a value contained within the packet. See  crsf_packets.h  for details
 ```
+
+By default, most transmitters use the **AETR1234** channel mapping:
+```
+Channel 1 -> Roll (Aileron)
+Channel 2 -> Pitch (Elevator)
+Channel 3 -> Throttle
+Channel 4 -> Yaw (Rudder)
+Channel 5 -> AUX1
+Channel 6 -> AUX2
+...
+```
+Channel values are decoded as standard CRSF 11-bit channel values (typically
+approximately 172–1811, with center at 992).
 
 If you need to regenerate the CRC8 table or to change the generator polynomial, modify the `POLY` constant at the top of `crc8_generator.py` and run it in your terminal using `python crc8_generator.py`. The result can be directly pasted into the `crsf_parser.c` file.
 
