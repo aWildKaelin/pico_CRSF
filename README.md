@@ -80,7 +80,7 @@ add_subdirectory(pico_crsf)
 target_link_libraries(your_project pico_crsf)
 ```
 
-Then, include `"crsf_parser.h"`.
+Then, include `"pico_crsf/crsf_parser.h"`.
 
 
 ## Contributions
