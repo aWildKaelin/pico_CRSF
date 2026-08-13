@@ -63,6 +63,8 @@ Callbacks can also be used to react to incoming packets. When a packet of the co
 
 `onFailsafe()` is called when no RC Channels packet has been received for more than one second. It will not be called again unless a valid RC Channels packet is received and failsafe is subsequently entered again.
 
+The `parser.failsafe` variable can be used to determine if the receiver is connected to a transmitter or not. If true, that means the board should be in failsafe mode, which means the transmitter has disconnected.
+
 ```c
 void onChannels(const crsf_parser *parser) {}
 void onLinkStats(const crsf_parser *parser) {}
