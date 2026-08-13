@@ -28,8 +28,13 @@ typedef enum crsf_states{
 
 
 typedef struct crsf_parser{
-    crsf_rc_channels RCChannels;
+    uint16_t channels[16];
+    uint32_t lastChannelsRcv;
     crsf_link_statistics statistics;
+
+    void (*rc_channels_callback)(const crsf_parser* parser);
+    void (*link_statistics_callback)(const crsf_parser* parser);
+    void (*failsafe_callback)(const crsf_parser* parser);
 
     uart_inst_t *uart;
     crsf_states state;
@@ -37,10 +42,13 @@ typedef struct crsf_parser{
     uint8_t rawPacket[62];
     uint8_t cursor;
 
+    bool failsafe;
+
     uint8_t packetLength;
 
     ringBuffer buffer;
 } crsf_parser;
+
 
 
 // https://github.com/tbs-fpv/tbs-crsf-spec/blob/main/crsf.md#crc
@@ -50,7 +58,15 @@ uint8_t crc8(const uint8_t * ptr, uint8_t len);
 void CRSFParser_init(crsf_parser *parser, uart_inst_t *uart);
 void CRSFParser_destroy(crsf_parser *parser);
 
+void CRSFParser_setChannelsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
+void CRSFParser_setStatisticsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
+void CRSFParser_setFailsafeCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
+
+void CRSFParser_setFailsafe();
+
 void CRSFParser_update(crsf_parser *parser);
+
+bool CRSFParser_isConnected(crsf_parser *parser);
 
 #endif
 

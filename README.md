@@ -1,7 +1,11 @@
 # pico_CRSF
 
 
-This project provides a parser for the TBS Crossfire (CRSF) protocol for the RP2040/Raspberry Pi Pico family of microcontrollers. CRSF is the protocol used by TBS Crossfire and ExpressLRS (ELRS) receivers to communicate with a host controller. Thus, this libarry allows for the use of standard drone RC hardware to control other robots and machines based on the RP2040 microcontroller.
+This project provides a parser for the TBS Crossfire (CRSF) protocol for the RP2040/Raspberry Pi Pico family of microcontrollers. 
+
+CRSF is the protocol used by TBS Crossfire and ExpressLRS (ELRS) receivers to communicate with a host controller. 
+
+This library allows for the use of standard drone RC hardware to control other robots and machines based on the RP2040 microcontroller.
 
 Compatibility with the RP2350 (Raspberry Pi Pico 2) has not been tested.
 
@@ -9,7 +13,7 @@ Compatibility with the RP2350 (Raspberry Pi Pico 2) has not been tested.
 
 Currently, the library is capable of parsing incoming packets, including RC Channels and Link Statistics.
 
-The library cannot transmit packets back or parse other telemetry.
+The library cannot transmit packets back or parse other telemetry. If an unsupported packet has been received, its ID will be reported via printf.
 
 # WARNING
 
@@ -51,18 +55,32 @@ while(true){
 The parser structure always contains the most recently decoded values for each supported packet type.
 ```c
 // channel data
-parser.RCChannels.channel_NUM //where NUM is the channel number ranging 1 -> 16
-parser.statistics.VAL         // where VAL is a value contained within the packet. See  crsf_packets.h  for details
+parser.channels[NUM]    //where NUM is the channel number ranging 0 -> 15
+parser.statistics.VAL   // where VAL is a value contained within the packet. See  crsf_packets.h  for details
+```
+
+Callbacks can also be used to react to incoming packets. When a packet of the corresponding type has finished parsing, the given callback function will execute. 
+
+`onFailsafe()` is called when no RC Channels packet has been received for more than one second. It will not be called again unless a valid RC Channels packet is received and failsafe is subsequently entered again.
+
+```c
+void onChannels(const crsf_parser *parser) {}
+void onLinkStats(const crsf_parser *parser) {}
+void onFailsafe(const crsf_parser *parser) {}
+
+CRSFParser_setChannelsCallback(&parser, onChannels);
+CRSFParser_setStatisticsCallback(&parser, onLinkStats);
+CRSFParser_setFailsafeCallback(&parser, onFailsafe);
 ```
 
 By default, most transmitters use the **AETR1234** channel mapping:
 ```
-Channel 1 -> Roll (Aileron)
-Channel 2 -> Pitch (Elevator)
-Channel 3 -> Throttle
-Channel 4 -> Yaw (Rudder)
-Channel 5 -> AUX1
-Channel 6 -> AUX2
+channels[0] -> Roll (Aileron)
+channels[1] -> Pitch (Elevator)
+channels[2] -> Throttle
+channels[3] -> Yaw (Rudder)
+channels[4] -> AUX1
+channels[5] -> AUX2
 ...
 ```
 Channel values are decoded as standard CRSF 11-bit channel values (typically

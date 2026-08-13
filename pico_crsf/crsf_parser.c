@@ -28,6 +28,7 @@ static const uint8_t crc8_table[256] = {
     0x84, 0x51, 0xFB, 0x2E, 0x7A, 0xAF, 0x05, 0xD0, 0xAD, 0x78, 0xD2, 0x07, 0x53, 0x86, 0x2C, 0xF9
 };
 
+
 uint8_t crc8(const uint8_t * ptr, uint8_t len){
     uint8_t crc = 0;
     for (uint8_t i=0; i<len; i++)
@@ -41,6 +42,10 @@ void CRSFParser_init(crsf_parser *parser, uart_inst_t *uart){
     parser->state = WAIT_SYNC;
     parser->uart = uart;
     parser->cursor = 0;
+    parser->packetLength = 0;
+    parser->lastChannelsRcv = time_us_32();
+    parser->failsafe = true;
+    
     ringBuffer_init(&parser->buffer, 128);
 }
 
@@ -49,7 +54,34 @@ void CRSFParser_destroy(crsf_parser *parser){
 }
 
 
+void CRSFParser_setChannelsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+    parser->rc_channels_callback = callback;
+}
+
+void CRSFParser_setStatisticsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+    parser->link_statistics_callback = callback;
+}
+
+void CRSFParser_setFailsafeCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+    parser->failsafe_callback = callback;
+}
+
+
 void CRSFParser_update(crsf_parser *parser){
+
+    // according to spec, a failsafe is to be engaged if the channels packet hasn't been transmitted for more than 1 second
+    //https://github.com/tbs-fpv/tbs-crsf-spec/blob/main/crsf.md#0x16-rc-channels-packed-payload
+
+    if (!parser->failsafe &&
+        time_us_32() - parser->lastChannelsRcv >= 1000000) {
+
+        parser->failsafe = true;
+
+        if(parser->failsafe_callback)
+            parser->failsafe_callback(parser);
+    }
+
+
     while (uart_is_readable(parser->uart)) {
         ringBuffer_writeChar(&parser->buffer, uart_getc(parser->uart));
     }
@@ -79,8 +111,10 @@ void CRSFParser_update(crsf_parser *parser){
     if(parser->state == AWAIT_PACKET){
         while(!ringBuffer_isEmpty(&parser->buffer)){
             parser->rawPacket[parser->cursor++] = ringBuffer_readChar(&parser->buffer);;
-            if(parser->cursor == parser->packetLength)
+            if(parser->cursor == parser->packetLength){
                 parser->state = CHECK_CRC;
+                break;
+            }
         }
     }
 
@@ -96,10 +130,35 @@ void CRSFParser_update(crsf_parser *parser){
 
         // RC Channels packet
         if(parser->rawPacket[0] == 0x16){
-            parser->RCChannels = *(crsf_rc_channels*)(parser->rawPacket + 1); 
+            crsf_rc_channels rc_channels = *(crsf_rc_channels*)(parser->rawPacket + 1);
+            parser->channels[0] = rc_channels.channel_1;
+            parser->channels[1] = rc_channels.channel_2;
+            parser->channels[2] = rc_channels.channel_3;
+            parser->channels[3] = rc_channels.channel_4;
+            parser->channels[4] = rc_channels.channel_5;
+            parser->channels[5] = rc_channels.channel_6;
+            parser->channels[6] = rc_channels.channel_7;
+            parser->channels[7] = rc_channels.channel_8;
+            parser->channels[8] = rc_channels.channel_9;
+            parser->channels[9] = rc_channels.channel_10;
+            parser->channels[10] = rc_channels.channel_11;
+            parser->channels[11] = rc_channels.channel_12;
+            parser->channels[12] = rc_channels.channel_13;
+            parser->channels[13] = rc_channels.channel_14;
+            parser->channels[14] = rc_channels.channel_15;
+            parser->channels[15] = rc_channels.channel_16;
+
+            parser->lastChannelsRcv = time_us_32();
+            parser->failsafe = false;
+
+            if(parser->rc_channels_callback)
+                parser->rc_channels_callback(parser);
         }
         else if(parser->rawPacket[0] == 0x14){
             parser->statistics = *(crsf_link_statistics*)(parser->rawPacket + 1);
+
+            if(parser->link_statistics_callback)
+                parser->link_statistics_callback(parser);
         }
         else{
             printf("\npico_CRSF ERROR: Packet with ID \"%02x\" lacks implementation\n", parser->rawPacket[0]);
