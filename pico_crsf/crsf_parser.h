@@ -27,14 +27,16 @@ typedef enum crsf_states{
 }crsf_states;
 
 
+typedef struct crsf_parser crsf_parser;
+
 typedef struct crsf_parser{
     uint16_t channels[16];
     uint32_t lastChannelsRcv;
     crsf_link_statistics statistics;
 
-    void (*rc_channels_callback)(const crsf_parser* parser);
-    void (*link_statistics_callback)(const crsf_parser* parser);
-    void (*failsafe_callback)(const crsf_parser* parser);
+    void (*rc_channels_callback)(const struct crsf_parser* parser);
+    void (*link_statistics_callback)(const struct crsf_parser* parser);
+    void (*failsafe_callback)(const struct crsf_parser* parser);
 
     uart_inst_t *uart;
     crsf_states state;
@@ -58,9 +60,9 @@ uint8_t crc8(const uint8_t * ptr, uint8_t len);
 void CRSFParser_init(crsf_parser *parser, uart_inst_t *uart);
 void CRSFParser_destroy(crsf_parser *parser);
 
-void CRSFParser_setChannelsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
-void CRSFParser_setStatisticsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
-void CRSFParser_setFailsafeCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser));
+void CRSFParser_setChannelsCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser));
+void CRSFParser_setStatisticsCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser));
+void CRSFParser_setFailsafeCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser));
 
 void CRSFParser_setFailsafe();
 

@@ -54,15 +54,15 @@ void CRSFParser_destroy(crsf_parser *parser){
 }
 
 
-void CRSFParser_setChannelsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+void CRSFParser_setChannelsCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser)){
     parser->rc_channels_callback = callback;
 }
 
-void CRSFParser_setStatisticsCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+void CRSFParser_setStatisticsCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser)){
     parser->link_statistics_callback = callback;
 }
 
-void CRSFParser_setFailsafeCallback(crsf_parser *parser, void (*callback)(crsf_parser *parser)){
+void CRSFParser_setFailsafeCallback(struct crsf_parser *parser, void (*callback)(const struct crsf_parser *parser)){
     parser->failsafe_callback = callback;
 }
 
